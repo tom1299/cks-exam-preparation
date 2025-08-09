@@ -26,3 +26,16 @@ Besides usual shell commands use the following commands:
   ```
   and verify that the issue is fixed by running kube-bench again
 - Write the description of the issues that could not be solved into a text file named "kube-bench-findings.txt" in this directory with a short description why the issue could not be fixed.
+
+## Hints for fixing issues
+- Read the "Remediation" section of the kube-bench report
+- For issues related to API server, controller manager, scheduler, etc., you may need to add the necessary flags to the `kind-config.yaml` file under the `kind` section. Especially, by using "Kubeadm Config Patches".
+- For issues related to the nodes host, run commands for fixing issues using `docker exec`. Successful commands should be added to a script named `harden-master-node.sh` that can be run on the node after the cluster has been created. This script should be placed in the same directory as this file.
+
+## Resources
+- [kube-bench documentation](https://github.com/aquasecurity/kube-bench/blob/main/docs/running.md)
+- [kube-bench repository](https://github.com/aquasecurity/kube-bench)
+- [kube-bench job configuration](https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job-master.yaml)
+- [kind configuration reference](https://kind.sigs.k8s.io/docs/user/configuration/)
+- [kind repository](https://github.com/kubernetes-sigs/kind)
+- [kubectl documentation](https://kubernetes.io/docs/reference/kubectl/overview/)
