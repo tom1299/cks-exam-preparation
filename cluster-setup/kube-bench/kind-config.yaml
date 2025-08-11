@@ -25,6 +25,7 @@ kubeadmConfigPatches:
       audit-log-maxage: "30"
       audit-log-maxbackup: "10"
       audit-log-maxsize: "100"
+      kubelet-preferred-address-types: "Hostname"
     extraVolumes:
     - name: audit-logs
       hostPath: /var/log/kubernetes/audit
