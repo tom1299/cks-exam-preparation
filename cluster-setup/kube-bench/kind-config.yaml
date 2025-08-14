@@ -19,13 +19,14 @@ kubeadmConfigPatches:
 - |
   kind: ClusterConfiguration
   apiServer:
+    timeoutForControlPlane: 10s
     extraArgs:
       profiling: "false"
       audit-log-path: "/var/log/kubernetes/audit/audit.log"
       audit-log-maxage: "30"
       audit-log-maxbackup: "10"
       audit-log-maxsize: "100"
-      kubelet-preferred-address-types: "Hostname"
+      # kubelet-certificate-authority: "/etc/kubernetes/pki/kubelet-ca.crt"
     extraVolumes:
     - name: audit-logs
       hostPath: /var/log/kubernetes/audit
