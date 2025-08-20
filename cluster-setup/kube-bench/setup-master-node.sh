@@ -21,6 +21,22 @@ mkdir -p /var/log/kubernetes/audit
 
 echo "Node hardening complete."
 
+echo "Fixing kube-bench WARN findings..."
+
+# Fix 1.1.9: Ensure that the Container Network Interface file permissions are set to 600 or more restrictive
+echo "Fixing CNI file permissions..."
+find /etc/cni -name "*.conflist" -exec chmod 600 {} \;
+
+# Fix 1.1.10: Ensure that the Container Network Interface file ownership is set to root:root
+echo "Fixing CNI file ownership..."
+find /etc/cni -name "*.conflist" -exec chown root:root {} \;
+
+# Fix 1.1.20: Ensure that the Kubernetes PKI certificate file permissions are set to 600 or more restrictive
+echo "Fixing PKI certificate file permissions..."
+find /etc/kubernetes/pki -name "*.crt" -exec chmod 600 {} \;
+
+echo "kube-bench WARN findings fixed."
+
 echo "Starting kubelet certificate setup..."
 
 # Split the certificate and create the new ca.crt file
