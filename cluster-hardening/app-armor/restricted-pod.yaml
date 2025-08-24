@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: restricted-pod
+spec:
+  securityContext:
+    appArmorProfile:
+      type: Localhost
+      localhostProfile: k8s-deny-write
+  containers:
+  - name: no-write-file
+    image: busybox:1.28
+    command: ["sh", "-c", "echo 'Waiting' && sleep 1h"]
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+      requests:
+        memory: "16Mi"
+        cpu: "50m"
+  - name: unrestricted
+    image: busybox:1.28
+    command: ["sh", "-c", "echo 'Waiting' && sleep 1h"]
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+      requests:
+        memory: "16Mi"
+        cpu: "50m"

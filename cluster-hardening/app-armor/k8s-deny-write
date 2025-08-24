@@ -1,0 +1,9 @@
+#include <tunables/global>
+
+# attach_disconnected = allow profile to be attached to a process that is already running
+profile k8s-deny-write flags=(attach_disconnected) {
+    #include <abstractions/base>
+
+    file,
+    audit deny /** w,
+}
