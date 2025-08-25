@@ -1,0 +1,12 @@
+#include <tunables/global>
+
+abi <abi/3.0>,
+
+profile k8s-network-restricted-abi flags=(attach_disconnected) {
+  #include <abstractions/base>
+  
+  file,
+  audit deny /** w,
+
+  audit deny network,
+}

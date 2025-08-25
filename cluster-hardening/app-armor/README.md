@@ -70,8 +70,9 @@ sudo aa-exec -p k8s-network-restricted -- /bin/bash
 
 ## Problems
 * Deny network does not work. Look at problem: https://github.com/moby/moby/issues/44984
-* AppArmor network mediation must be enabled in the kernel.
+* Solution: Using the feature abi in the policy solved the problem. See https://gitlab.com/apparmor/apparmor/-/wikis/apparmorpolicyfeaturesABI#developing-profiles-in-with-the-feature-abi
 
 ## TODO
-Do all the examples here: https://kubernetes.io/docs/tutorials/security/apparmor/
+* Do all the examples here: https://kubernetes.io/docs/tutorials/security/apparmor/
+* Do a comprehensive example for restricting network access. For example only allow dns and access to a specific IP address (proxy)
 
