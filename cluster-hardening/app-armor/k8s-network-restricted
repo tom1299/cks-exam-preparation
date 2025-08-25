@@ -1,0 +1,15 @@
+#include <tunables/global>
+
+# AppArmor profile for Kubernetes network-restricted containers
+# See https://manpages.ubuntu.com/manpages/xenial/man5/apparmor.d.5.html and
+# https://gitlab.com/apparmor/apparmor/-/wikis/AppArmor_Core_Policy_Reference
+
+profile k8s-network-restricted flags=(attach_disconnected) {
+  #include <abstractions/base>
+  
+  file,
+  audit deny /** w,
+
+  # Deny all network access. Only possible if kernel supports network mediation
+  audit deny network,
+}

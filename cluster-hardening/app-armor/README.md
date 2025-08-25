@@ -63,6 +63,15 @@ Events:
   Normal   Pulled     5s (x7 over 55s)  kubelet            Container image "busybox:1.28" already present on machine
   Warning  Failed     5s (x7 over 55s)  kubelet            Error: failed to get container spec opts: failed to generate apparmor spec opts: apparmor profile not found k8s-deny-write
 ```
+Run bash with the profile applied:
+```bash
+sudo aa-exec -p k8s-network-restricted -- /bin/bash
+```
+
+## Problems
+* Deny network does not work. Look at problem: https://github.com/moby/moby/issues/44984
+* AppArmor network mediation must be enabled in the kernel.
 
 ## TODO
 Do all the examples here: https://kubernetes.io/docs/tutorials/security/apparmor/
+
