@@ -1,1 +1,3 @@
 /cluster-hardening/restricting-user-permissions/certs
+cluster-hardening/seccomp/profiles/
+.vscode/
