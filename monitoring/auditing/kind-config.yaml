@@ -24,6 +24,7 @@ kubeadmConfigPatches:
       hostPath: /var/log/kubernetes/audit
       mountPath: /var/log/kubernetes/audit
       readOnly: false
+    - name: audit-policy
       hostPath: /etc/kubernetes/audit
       mountPath: /etc/kubernetes/audit
       readOnly: true
