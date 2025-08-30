@@ -2,3 +2,6 @@
 cluster-hardening/seccomp/profiles/
 .vscode/
 monitoring/auditing/audit-log/audit.log
+supply-chain/image-policy-webhook/webhook-impl
+supply-chain/image-policy-webhook/admission-control/api-server-client.crt
+supply-chain/image-policy-webhook/admission-control/api-server-client.key
