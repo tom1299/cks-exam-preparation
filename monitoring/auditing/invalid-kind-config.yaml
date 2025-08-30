@@ -1,0 +1,35 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  podSubnet: "10.122.0.0/16"
+  serviceSubnet: "10.46.0.0/12"
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: ./audit-log
+    containerPath: /var/log/kubernetes/audit
+    readOnly: false
+  - hostPath: ./audit-policy
+    containerPath: /etc/kubernetes/audit
+    readOnly: true
+kubeadmConfigPatches:
+- |
+  kind: ClusterConfiguration
+  apiServer:
+    extraArgs:
+      audit-policy-file: /etc/kubernetes/audit/audit-policy.yaml
+      audit-log-path: /var/log/kubernetes/audit/audit.log
+    extraVolumes:
+    - name: audit-logs
+      hostPath: /var/log/kubernetes/audit
+      mountPath: /var/log/kubernetes/audit
+      readOnly: false
+      hostPath: /etc/kubernetes/audit
+      mountPath: /etc/kubernetes/audit
+      readOnly: true
+  controllerManager:
+    extraArgs:
+      profiling: "false"
+  scheduler:
+    extraArgs:
+      profiling: "false"
