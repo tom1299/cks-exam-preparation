@@ -61,6 +61,8 @@ cd $BASE_DIR
 sed -i 's/defaultAllow: true/defaultAllow: false/' admission-control/image-policy-webhook-admission-config.yaml
 
 API_SERVER_ID=$(docker exec kind-control-plane crictl ps --name kube-apiserver -q)
+
+# TODO: This line does not seem to work, but rather runs into the timeout. Check parameter expansion
 docker exec kind-control-plane crictl stop --timeout 30 $API_SERVER_ID
 
 echo "Waiting for API server to restart..."
