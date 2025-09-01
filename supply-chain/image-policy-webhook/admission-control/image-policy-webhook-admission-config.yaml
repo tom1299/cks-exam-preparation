@@ -8,4 +8,4 @@ plugins:
         allowTTL: 50
         denyTTL: 50
         retryBackoff: 500
-        defaultAllow: false
+        defaultAllow: true

@@ -13,6 +13,9 @@ kubeadmConfigPatches:
 - |
   kind: ClusterConfiguration
   apiServer:
+    extraArgs:
+      admission-control-config-file: "/etc/kubernetes/admission-control/image-policy-webhook-admission-config.yaml"
+      enable-admission-plugins: "ImagePolicyWebhook"
     extraVolumes:
     - name: admission-control
       hostPath: /etc/kubernetes/admission-control

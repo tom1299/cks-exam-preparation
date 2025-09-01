@@ -5,7 +5,7 @@ clusters:
   - name: image-validation-webhook
     cluster:
       certificate-authority: /etc/kubernetes/admission-control/ca.crt
-      server: https://image-validation-webhook:8080/validate
+      server: https://kind-control-plane:30080/validate
 contexts:
   - context:
       cluster: image-validation-webhook
