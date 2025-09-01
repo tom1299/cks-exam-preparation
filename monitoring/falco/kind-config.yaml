@@ -5,6 +5,14 @@ networking:
   serviceSubnet: "10.46.0.0/12"
 nodes:
 - role: control-plane
+  extraMounts:
+  - hostPath: ./rules
+    containerPath: /etc/falco/rules.d/
+    readOnly: true
 - role: worker
+  extraMounts:
+  - hostPath: ./rules
+    containerPath: /etc/falco/rules.d/
+    readOnly: true
   labels:
     worker-node: "true"

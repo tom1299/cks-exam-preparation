@@ -1,0 +1,8 @@
+mounts:
+  volumes:
+  - name: rules
+    hostPath:
+      path: /etc/falco/rules.d/
+  volumeMounts:
+  - name: rules
+    mountPath: /etc/falco/rules.d/
