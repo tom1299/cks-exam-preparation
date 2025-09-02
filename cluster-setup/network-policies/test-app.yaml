@@ -109,6 +109,21 @@ spec:
       EOF
       python app.py
 ---
+# MySQL Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  namespace: db
+data:
+  my.cnf: |
+    [mysqld]
+    general_log = 1
+    general_log_file = /var/log/mysql/queries.log
+    log_queries_not_using_indexes = 1
+    log_error_verbosity = 3
+    slow_query_log = 1
+---
 # MySQL Database Pod
 apiVersion: v1
 kind: Pod
@@ -128,6 +143,26 @@ spec:
       value: "password"
     - name: MYSQL_DATABASE
       value: "testdb"
+    volumeMounts:
+    - name: mysql-config-volume
+      mountPath: /etc/mysql/conf.d
+      readOnly: true
+    - name: query-log
+      mountPath: /var/log/mysql
+      readOnly: false
+  - name: query-logger
+    image: busybox
+    command: ["/bin/sh", "-c", "tail -f /var/log/mysql/queries.log"]
+    volumeMounts:
+    - name: query-log
+      mountPath: /var/log/mysql
+      readOnly: true
+  volumes:
+  - name: mysql-config-volume
+    configMap:
+      name: mysql-config
+  - name: query-log
+    emptyDir: {}
 ---
 # Services for pod communication
 apiVersion: v1
