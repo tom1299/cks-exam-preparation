@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend
+  labels:
+    name: backend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: db
+  labels:
+    name: db
+---
+# Frontend Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: frontend
+  labels:
+    app: frontend
+spec:
+  containers:
+  - name: frontend
+    image: nginx:alpine
+    ports:
+    - containerPort: 8080
+    command: ["/bin/sh"]
+    args:
+    - -c
+    - |
+      cat > /etc/nginx/conf.d/default.conf << 'EOF'
+      server {
+          listen 8080;
+          location / {
+              proxy_pass http://backend.backend.svc.cluster.local:8080;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+          }
+      }
+      EOF
+      nginx -g 'daemon off;'
+---
+# Backend Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend
+  namespace: backend
+  labels:
+    app: backend
+spec:
+  containers:
+  - name: backend
+    image: python:3.9-slim
+    ports:
+    - containerPort: 8080
+    env:
+    - name: DB_HOST
+      value: "mysql.db.svc.cluster.local"
+    - name: DB_PORT
+      value: "3306"
+    - name: DB_USER
+      value: "root"
+    - name: DB_PASSWORD
+      value: "password"
+    - name: DB_NAME
+      value: "testdb"
+    command: ["/bin/sh"]
+    args:
+    - -c
+    - |
+      pip install flask mysql-connector-python
+      cat > app.py << 'EOF'
+      from flask import Flask
+      import mysql.connector
+      import json
+      
+      app = Flask(__name__)
+      
+      @app.route('/')
+      def test_db():
+          try:
+              conn = mysql.connector.connect(
+                  host="mysql.db.svc.cluster.local",
+                  port=3306,
+                  user="root",
+                  password="password",
+                  database="testdb"
+              )
+              cursor = conn.cursor()
+              cursor.execute("SELECT 'Database connection successful!' as message, NOW() as timestamp")
+              result = cursor.fetchone()
+              conn.close()
+              return {"status": "success", "message": result[0], "timestamp": str(result[1])}
+          except Exception as e:
+              return {"status": "error", "message": str(e)}
+      
+      if __name__ == '__main__':
+          app.run(host='0.0.0.0', port=8080)
+      EOF
+      python app.py
+---
+# MySQL Database Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql
+  namespace: db
+  labels:
+    app: db
+spec:
+  containers:
+  - name: mysql
+    image: mysql:8.0
+    ports:
+    - containerPort: 3306
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "password"
+    - name: MYSQL_DATABASE
+      value: "testdb"
+---
+# Services for pod communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: db
+spec:
+  selector:
+    app: db
+  ports:
+  - port: 3306
+    targetPort: 3306
