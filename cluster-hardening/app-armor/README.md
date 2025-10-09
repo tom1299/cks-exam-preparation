@@ -69,10 +69,22 @@ sudo aa-exec -p k8s-network-restricted -- /bin/bash
 ```
 
 ## Problems
-* Deny network does not work. Look at problem: https://github.com/moby/moby/issues/44984
 * Solution: Using the feature abi in the policy solved the problem. See https://gitlab.com/apparmor/apparmor/-/wikis/apparmorpolicyfeaturesABI#developing-profiles-in-with-the-feature-abi
+* Compare this with:
+   ```
+   #include <tunables/global>
+
+   profile network-deny flags=(attach_disconnected) {
+       #include <abstractions/base>
+       network,
+   }
+   ```
+   which should work as well without abi
 
 ## TODO
 * Do all the examples here: https://kubernetes.io/docs/tutorials/security/apparmor/
 * Do a comprehensive example for restricting network access. For example only allow dns and access to a specific IP address (proxy)
 
+
+## Notes
+* You can specify the appArmorProfile on either a container's securityContext or on a Pod's securityContext. If the profile is set at the pod level, it will be used as the default profile for all containers in the pod (including init, sidecar, and ephemeral containers). If both a pod & container AppArmor profile are set, the container's profile will be used.
