@@ -10,3 +10,4 @@ supply-chain/image-policy-webhook/admission-control/ca.crt
 **/.venv/
 .idea/
 **/.idea/
+**/__pycache__
