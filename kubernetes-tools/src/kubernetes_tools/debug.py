@@ -1,7 +1,6 @@
 import time
 from typing import Tuple, List
 from kubernetes import client, config
-from kubernetes.client.rest import ApiException
 
 config.load_kube_config()
 
