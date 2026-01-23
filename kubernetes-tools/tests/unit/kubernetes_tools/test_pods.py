@@ -7,19 +7,19 @@ class TestPods:
         """Test getting an existing pod"""
         pod = pods.get_pod(
             name="backend",
-            namespace="backend"
+            namespace="test-app"
         )
 
         # The function returns a pod object when found
         assert pod is not None
         assert pod.metadata.name == "backend"
-        assert pod.metadata.namespace == "backend"
+        assert pod.metadata.namespace == "test-app"
 
     def test_get_pod_not_found(self):
         """Test getting a non-existent pod"""
         pod = pods.get_pod(
             name="nonexistent-pod",
-            namespace="backend"
+            namespace="test-app"
         )
 
         # The function returns None when pod is not found
@@ -39,25 +39,24 @@ class TestPods:
     def test_find_exposed_port_tcp(self):
         """Test finding an exposed TCP port in a pod"""
         pod = pods.get_pod(
-            name="backend",
-            namespace="backend"
+            name="mysql",
+            namespace="test-app"
         )
 
         assert pod is not None
 
         # Test finding an exposed TCP port
-        exposed = pods.find_exposed_port(pod, port=8080, protocol="TCP")
+        exposed = pods.find_exposed_port(pod, port=3306, protocol="TCP")
 
-        if exposed:
-            assert exposed.container_name is not None
-            assert exposed.port.container_port == 8080
-            assert exposed.port.protocol == "TCP"
+        assert exposed.container_name is not None
+        assert exposed.port.container_port == 3306
+        assert exposed.port.protocol == "TCP"
 
     def test_find_exposed_port_not_found(self):
         """Test finding a non-exposed port"""
         pod = pods.get_pod(
             name="backend",
-            namespace="backend"
+            namespace="test-app"
         )
 
         assert pod is not None
@@ -70,31 +69,28 @@ class TestPods:
     def test_find_exposed_port_wrong_protocol(self):
         """Test finding a port with wrong protocol"""
         pod = pods.get_pod(
-            name="backend",
-            namespace="backend"
+            name="mysql",
+            namespace="test-app"
         )
 
         assert pod is not None
 
-        # If the pod has TCP port 8080, searching for UDP should return None
-        exposed = pods.find_exposed_port(pod, port=8080, protocol="UDP")
+        exposed = pods.find_exposed_port(pod, port=3306, protocol="UDP")
 
-        # This should be None if 8080 is only exposed as TCP
         assert exposed is None or exposed.port.protocol == "UDP"
 
     def test_find_exposed_port_default_protocol(self):
         """Test finding a port with default TCP protocol"""
         pod = pods.get_pod(
-            name="backend",
-            namespace="backend"
+            name="mysql",
+            namespace="test-app"
         )
 
         assert pod is not None
 
         # Test with default protocol (TCP)
-        exposed = pods.find_exposed_port(pod, port=8080)
+        exposed = pods.find_exposed_port(pod, port=3306)
 
-        if exposed:
-            assert exposed.container_name is not None
-            assert exposed.port.container_port == 8080
+        assert exposed.container_name is not None
+        assert exposed.port.container_port == 3306
 

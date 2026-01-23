@@ -6,9 +6,9 @@ class TestDebug:
 
     def test_debug_command_succeeds(self):
         output, success = debug.run_debug_command(
-            namespace="backend",
+            namespace="test-app",
             pod_name="backend",
-            command=["nc", "-vz", "-w", "1", "mysql.db", "3306"],
+            command=["nc", "-vz", "-w", "1", "mysql", "3306"],
             image="nicolaka/netshoot"
         )
 
@@ -18,9 +18,9 @@ class TestDebug:
 
     def test_debug_command_fails(self):
         output, success = debug.run_debug_command(
-            namespace="backend",
+            namespace="test-app",
             pod_name="backend",
-            command=["nc", "-vz", "-w", "1", "mysql.db", "3307"],
+            command=["nc", "-vz", "-w", "1", "mysql", "3307"],
             image="nicolaka/netshoot"
         )
 
@@ -31,7 +31,7 @@ class TestDebug:
     def test_debug_command_timeout(self):
         with pytest.raises(Exception):
             debug.run_debug_command(
-                namespace="backend",
+                namespace="test-app",
                 pod_name="backend",
                 command=["sleep", "3"],
                 image="busybox",
