@@ -298,3 +298,37 @@ def associate_ingress_egress_rules(
     return ingress_rules, egress_rules
 
 
+def find_egress_with_matching_ingress(
+    egress_rules: List[EgressRules],
+    port: int,
+    protocol: str = "TCP" # TODO: Consider using Enum for protocol
+) -> List[EgressRules]:
+    """
+    Find EgressRules that have matching IngressRules for a given port and protocol.
+
+    This function filters egress rules to find those that have associated ingress rules
+    matching the specified port and protocol.
+
+    Args:
+        egress_rules: List of EgressRules objects to search through
+        port: The port number to match
+        protocol: The protocol to match (default: "TCP"). Common values: "TCP", "UDP"
+
+    Returns:
+        List of EgressRules that have at least one matching IngressRule with the specified
+        port and protocol
+    """
+    protocol = protocol.upper()
+    result = []
+
+    for egress_rule in egress_rules:
+        # Check if this egress rule has any matching ingress rules
+        for ingress_rule in egress_rule.matching_ingress_rules:
+            # Check if the ingress rule matches the port and protocol
+            if ingress_rule.port == port and ingress_rule.protocol == protocol:
+                result.append(egress_rule)
+                break  # No need to check other ingress rules for this egress rule
+
+    return result
+
+

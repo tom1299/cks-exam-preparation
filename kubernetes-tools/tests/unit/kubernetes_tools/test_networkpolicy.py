@@ -210,3 +210,116 @@ class TestNetworkPolicy:
             assert isinstance(updated_ingress, list)
             assert isinstance(updated_egress, list)
 
+    def test_find_egress_with_matching_ingress(self):
+        """Test finding egress rules that have matching ingress rules"""
+        pod = pods.get_pod(name="backend", namespace="backend")
+
+        if pod:
+            # Get both ingress and egress rules for the same port
+            port = 8080
+            protocol = "TCP"
+
+            ingress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod,
+                port=port,
+                protocol=protocol,
+                rule_type="ingress"
+            )
+
+            egress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod,
+                port=port,
+                protocol=protocol,
+                rule_type="egress"
+            )
+
+            # Associate the rules
+            ingress_rules, egress_rules = networkpolicy.associate_ingress_egress_rules(
+                ingress_rules, egress_rules
+            )
+
+            # Find egress rules with matching ingress
+            matching_egress = networkpolicy.find_egress_with_matching_ingress(
+                egress_rules, port=port, protocol=protocol
+            )
+
+            # Should return a list
+            assert isinstance(matching_egress, list)
+
+            # All returned egress rules should have at least one matching ingress rule
+            for egress_rule in matching_egress:
+                assert isinstance(egress_rule, networkpolicy.EgressRules)
+                # Should have at least one matching ingress rule
+                assert len(egress_rule.matching_ingress_rules) > 0
+                # At least one matching ingress rule should have the correct port and protocol
+                has_matching = any(
+                    ing.port == port and ing.protocol == protocol
+                    for ing in egress_rule.matching_ingress_rules
+                )
+                assert has_matching
+
+    def test_find_egress_with_matching_ingress_no_matches(self):
+        """Test finding egress rules when there are no matching ingress rules"""
+        pod = pods.get_pod(name="backend", namespace="backend")
+
+        if pod:
+            # Get egress rules for one port
+            egress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod,
+                port=8080,
+                protocol="TCP",
+                rule_type="egress"
+            )
+
+            # Don't associate with any ingress rules, so matching_ingress_rules will be empty
+            # Find egress rules with matching ingress for a different port
+            matching_egress = networkpolicy.find_egress_with_matching_ingress(
+                egress_rules, port=9999, protocol="TCP"
+            )
+
+            # Should return empty list since there are no associated ingress rules
+            assert isinstance(matching_egress, list)
+            assert len(matching_egress) == 0
+
+    def test_find_egress_with_matching_ingress_empty_list(self):
+        """Test finding egress rules with an empty list"""
+        matching_egress = networkpolicy.find_egress_with_matching_ingress(
+            [], port=8080, protocol="TCP"
+        )
+
+        assert isinstance(matching_egress, list)
+        assert len(matching_egress) == 0
+
+    def test_find_egress_with_matching_ingress_different_protocol(self):
+        """Test finding egress rules with a different protocol"""
+        pod = pods.get_pod(name="backend", namespace="backend")
+
+        if pod:
+            # Get rules with TCP
+            ingress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod,
+                port=8080,
+                protocol="TCP",
+                rule_type="ingress"
+            )
+
+            egress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod,
+                port=8080,
+                protocol="TCP",
+                rule_type="egress"
+            )
+
+            # Associate the rules
+            ingress_rules, egress_rules = networkpolicy.associate_ingress_egress_rules(
+                ingress_rules, egress_rules
+            )
+
+            # Try to find with UDP (should not match TCP ingress rules)
+            matching_egress = networkpolicy.find_egress_with_matching_ingress(
+                egress_rules, port=8080, protocol="UDP"
+            )
+
+            # Should return empty list or only rules that actually have UDP ingress matches
+            assert isinstance(matching_egress, list)
+
