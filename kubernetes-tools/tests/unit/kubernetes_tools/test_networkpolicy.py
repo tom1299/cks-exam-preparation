@@ -156,6 +156,174 @@ class TestNetworkPolicy:
 
         assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is True
 
+    def test_contains_egress_rule_match(self):
+        """Test that egress rule matches with correct port, selector, and protocol"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="TCP") is True
+
+    def test_contains_egress_rule_wrong_port(self):
+        """Test that egress rule doesn't match with wrong port"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3307, selector={"app": "pod-b"}, protocol="TCP") is False
+
+    def test_contains_egress_rule_wrong_selector(self):
+        """Test that egress rule doesn't match with wrong selector"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "xxx"}, protocol="TCP") is False
+
+    def test_contains_egress_rule_wrong_protocol(self):
+        """Test that egress rule doesn't match with wrong protocol"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="UDP") is False
+
+    def test_contains_egress_rule_no_port_in_nwp(self):
+        """Test that egress rule matches any port when no ports are specified"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        egress_nwp.spec.egress[0].ports = []
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3307, selector={"app": "pod-b"}, protocol="TCP") is True
+
+    def test_contains_egress_rule_match_multiple_peer_labels(self):
+        """Test that egress rule matches with multiple peer labels"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b", "tier": "database"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b", "tier": "database"}, protocol="TCP") is True
+
+    def test_contains_egress_rule_match_multiple_peer_labels_different_order(self):
+        """Test that egress rule matches with multiple peer labels in different order"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"tier": "database", "app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b", "tier": "database"}, protocol="TCP") is True
+
+    def test_contains_egress_rule_match_multiple_peer_labels_not_matching(self):
+        """Test that egress rule doesn't match when peer labels don't match exactly"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b", "tier": "database"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="TCP") is False
+
+    def test_contains_egress_rule_match_multiple_ports(self):
+        """Test that egress rule matches when one of multiple ports matches"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        # Add another port to the egress rule
+        another_port = client.V1NetworkPolicyPort(
+            protocol="TCP",
+            port=8080
+        )
+        existing_port = egress_nwp.spec.egress[0].ports[0]
+        egress_nwp.spec.egress[0].ports = [another_port, existing_port]
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="TCP") is True
+
+    def test_contains_egress_rule_no_egress_rules(self):
+        """Test that function returns False when no egress rules exist"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        egress_nwp.spec.egress = []
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="TCP") is False
+
+    def test_contains_egress_rule_no_peers(self):
+        """Test that function returns False when egress rule has no peers"""
+        egress_nwp = create_nwp(
+            pod_match_labels={"app": "pod-a"},
+            peer_match_labels={"app": "pod-b"},
+            namespace="test-app",
+            name="egress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=False
+        )
+
+        egress_nwp.spec.egress[0].to = []
+
+        assert networkpolicy.contains_egress_rule(egress_nwp, port=3306, selector={"app": "pod-b"}, protocol="TCP") is False
+
 
 def create_nwp(pod_match_labels: dict, peer_match_labels: dict, namespace: str, name: str, port : int, protocol: str = "TCP", ingress: bool = True) -> client.V1NetworkPolicy:
     """Helper to create a network policy for testing"""
