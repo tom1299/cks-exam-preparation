@@ -1,15 +1,12 @@
 import time
 from typing import Tuple, List
-from kubernetes import client, config
-
-config.load_kube_config()
-
+from kubernetes import client
 
 def run_debug_command(
     namespace: str,
     pod_name: str,
     command: List[str],
-    image: str = "nicolaka/netshoot",
+    image: str = "busybox",
     max_wait: int = 60
 ) -> Tuple[str, bool]:
     """
@@ -22,7 +19,8 @@ def run_debug_command(
         namespace: The Kubernetes namespace where the pod is located
         pod_name: The name of the pod to debug
         command: The command to run in the debug container (as a list of strings)
-        image: The container image to use for debugging (default: nicolaka/netshoot)
+        image: The container image to use for debugging (default: busybox)
+        max_wait: How long to wait for debugging (default: 60)
 
     Returns:
         A tuple of (output: str, success: bool) where:
