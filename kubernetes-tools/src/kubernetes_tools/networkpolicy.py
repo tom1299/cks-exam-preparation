@@ -1,6 +1,9 @@
 from kubernetes import client, config
 from typing import List
 
+from kubernetes.client import V1ContainerPort
+from pydantic import BaseModel
+
 def get_network_policies_matching_pod(
     pod: client.V1Pod
 ) -> List[str]:
