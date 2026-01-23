@@ -188,3 +188,113 @@ def get_network_policy_rules(
     return results
 
 
+def _peers_match(peer1: client.V1NetworkPolicyPeer, peer2: client.V1NetworkPolicyPeer) -> bool:
+    """
+    Check if two V1NetworkPolicyPeer objects match.
+
+    Args:
+        peer1: First NetworkPolicyPeer to compare
+        peer2: Second NetworkPolicyPeer to compare
+
+    Returns:
+        True if the peers match, False otherwise
+    """
+    # Compare pod selector
+    pod_selector_match = True
+    if peer1.pod_selector or peer2.pod_selector:
+        # Both must have pod_selector or both must not have it
+        if bool(peer1.pod_selector) != bool(peer2.pod_selector):
+            pod_selector_match = False
+        elif peer1.pod_selector and peer2.pod_selector:
+            # Compare match_labels
+            labels1 = peer1.pod_selector.match_labels or {}
+            labels2 = peer2.pod_selector.match_labels or {}
+            pod_selector_match = labels1 == labels2
+
+    # Compare namespace selector
+    namespace_selector_match = True
+    if peer1.namespace_selector or peer2.namespace_selector:
+        # Both must have namespace_selector or both must not have it
+        if bool(peer1.namespace_selector) != bool(peer2.namespace_selector):
+            namespace_selector_match = False
+        elif peer1.namespace_selector and peer2.namespace_selector:
+            # Compare match_labels
+            labels1 = peer1.namespace_selector.match_labels or {}
+            labels2 = peer2.namespace_selector.match_labels or {}
+            namespace_selector_match = labels1 == labels2
+
+    # Compare IP block
+    ip_block_match = True
+    if peer1.ip_block or peer2.ip_block:
+        # Both must have ip_block or both must not have it
+        if bool(peer1.ip_block) != bool(peer2.ip_block):
+            ip_block_match = False
+        elif peer1.ip_block and peer2.ip_block:
+            # Compare CIDR and except
+            cidr_match = peer1.ip_block.cidr == peer2.ip_block.cidr
+            except1 = set(peer1.ip_block._except or [])
+            except2 = set(peer2.ip_block._except or [])
+            except_match = except1 == except2
+            ip_block_match = cidr_match and except_match
+
+    return pod_selector_match and namespace_selector_match and ip_block_match
+
+
+def associate_ingress_egress_rules(
+    ingress_rules: List[IngressRules],
+    egress_rules: List[EgressRules]
+) -> tuple[List[IngressRules], List[EgressRules]]:
+    """
+    Associate matching IngressRules and EgressRules based on their NetworkPolicyPeer objects.
+
+    This function finds matching peers between ingress and egress rules and creates bidirectional
+    associations between them.
+
+    Args:
+        ingress_rules: List of IngressRules objects
+        egress_rules: List of EgressRules objects
+
+    Returns:
+        A tuple of (ingress_rules, egress_rules) with populated matching_egress_rules and
+        matching_ingress_rules fields
+
+    Example:
+        from kubernetes_tools.pods import get_pod
+
+        pod = get_pod(name="backend", namespace="backend")
+        if pod:
+            ingress = get_network_policy_rules(pod, port=8080, rule_type="ingress")
+            egress = get_network_policy_rules(pod, port=8080, rule_type="egress")
+
+            ingress, egress = associate_ingress_egress_rules(ingress, egress)
+
+            for ing_rule in ingress:
+                print(f"Ingress rule has {len(ing_rule.matching_egress_rules)} matching egress rules")
+    """
+    # TODO: Refacto this to avoid nested loops / make the function more readable
+    # Iterate over IngressRules objects
+    for ingress_rule in ingress_rules:
+        # Iterate over the ingress_rules property (list of V1NetworkPolicyPeer)
+        for ingress_peer in ingress_rule.ingress_rules:
+            # Find matching EgressRule
+            for egress_rule in egress_rules:
+                # Check if any peer in egress_rules matches the ingress peer
+                for egress_peer in egress_rule.egress_rules:
+                    if _peers_match(ingress_peer, egress_peer):
+                        # TODO: Based on pydantic behavior, duplicates should not happen, but may be better to compare
+                        # based on network policy name and pod name instead of object reference
+
+                        # Add the EgressRule to matching_egress_rules if not already present
+                        if egress_rule not in ingress_rule.matching_egress_rules:
+                            ingress_rule.matching_egress_rules.append(egress_rule)
+
+                        # Add the IngressRule to matching_ingress_rules if not already present
+                        if ingress_rule not in egress_rule.matching_ingress_rules:
+                            egress_rule.matching_ingress_rules.append(ingress_rule)
+
+                        # Break after finding a match to avoid duplicates
+                        break
+
+    return ingress_rules, egress_rules
+
+

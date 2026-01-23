@@ -119,3 +119,94 @@ class TestNetworkPolicy:
         # If there are rules, verify default protocol is TCP
         for rule in rules:
             assert rule.protocol == "TCP"
+
+    def test_associate_ingress_egress_rules(self):
+        """Test associating matching ingress and egress rules"""
+        pod = pods.get_pod(
+            name="backend",
+            namespace="backend"
+        )
+
+        assert pod is not None
+
+        # Get both ingress and egress rules for the same port
+        ingress_rules = networkpolicy.get_network_policy_rules(
+            pod=pod,
+            port=8080,
+            protocol="TCP",
+            rule_type="ingress"
+        )
+
+        egress_rules = networkpolicy.get_network_policy_rules(
+            pod=pod,
+            port=8080,
+            protocol="TCP",
+            rule_type="egress"
+        )
+
+        # Associate the rules
+        updated_ingress, updated_egress = networkpolicy.associate_ingress_egress_rules(
+            ingress_rules, egress_rules
+        )
+
+        # Verify we got the same lists back
+        assert updated_ingress == ingress_rules
+        assert updated_egress == egress_rules
+
+        # Verify structure
+        assert isinstance(updated_ingress, list)
+        assert isinstance(updated_egress, list)
+
+        # If there are matches, verify bidirectional associations
+        for ingress_rule in updated_ingress:
+            for matching_egress in ingress_rule.matching_egress_rules:
+                # The matching egress should reference back to this ingress
+                assert ingress_rule in matching_egress.matching_ingress_rules
+
+        for egress_rule in updated_egress:
+            for matching_ingress in egress_rule.matching_ingress_rules:
+                # The matching ingress should reference back to this egress
+                assert egress_rule in matching_ingress.matching_egress_rules
+
+    def test_associate_empty_lists(self):
+        """Test associating empty lists of rules"""
+        ingress_rules = []
+        egress_rules = []
+
+        updated_ingress, updated_egress = networkpolicy.associate_ingress_egress_rules(
+            ingress_rules, egress_rules
+        )
+
+        assert updated_ingress == []
+        assert updated_egress == []
+
+    def test_associate_with_no_matches(self):
+        """Test associating rules from different pods/ports that don't match"""
+        pod1 = pods.get_pod(name="backend", namespace="backend")
+
+        if pod1:
+            # Get ingress rules for one port
+            ingress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod1,
+                port=8080,
+                protocol="TCP",
+                rule_type="ingress"
+            )
+
+            # Get egress rules for a different port (unlikely to match)
+            egress_rules = networkpolicy.get_network_policy_rules(
+                pod=pod1,
+                port=9999,
+                protocol="TCP",
+                rule_type="egress"
+            )
+
+            # Associate the rules
+            updated_ingress, updated_egress = networkpolicy.associate_ingress_egress_rules(
+                ingress_rules, egress_rules
+            )
+
+            # Rules should still be returned even if no matches
+            assert isinstance(updated_ingress, list)
+            assert isinstance(updated_egress, list)
+
