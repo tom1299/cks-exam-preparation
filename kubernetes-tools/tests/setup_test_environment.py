@@ -1,8 +1,6 @@
 """
 Setup script for creating test environment for kubernetes-tools tests.
 """
-import os
-from pathlib import Path
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
