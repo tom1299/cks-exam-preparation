@@ -134,6 +134,28 @@ class TestNetworkPolicy:
 
         assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is False
 
+    def test_contains_ingress_rule_match_multiple_ports(self):
+
+        ingress_nwp  = create_nwp(
+            pod_match_labels={"app": "pod-b"},
+            peer_match_labels={"app": "pod-a"},
+            namespace="test-app",
+            name="ingress-policy",
+            port=3306,
+            protocol="TCP",
+            ingress=True
+        )
+
+        # Add another port to the ingress rule
+        another_port = client.V1NetworkPolicyPort(
+            protocol="TCP",
+            port=8080
+        )
+        existing_port = ingress_nwp.spec.ingress[0].ports[0]
+        ingress_nwp.spec.ingress[0].ports = [another_port, existing_port]
+
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is True
+
 
 def create_nwp(pod_match_labels: dict, peer_match_labels: dict, namespace: str, name: str, port : int, protocol: str = "TCP", ingress: bool = True) -> client.V1NetworkPolicy:
     """Helper to create a network policy for testing"""
