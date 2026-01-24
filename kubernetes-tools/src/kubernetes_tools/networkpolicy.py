@@ -51,14 +51,15 @@ def get_network_policies_matching_pod(
 
     return matching_policies
 
-def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, selector: dict, protocol: str = "TCP") -> bool:
+def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, peer_selector: dict, protocol: str = "TCP") -> bool:
     """
-    Check if a network policy contains an ingress rule matching the specified port, selector, and protocol.
+    TODO: Examine whether is it possible to refactor a generic method for both ingress and egress rules functions.
+    Check if a network policy contains an ingress rule matching the specified port, peer selector, and protocol.
 
     Args:
         network_policy: The V1NetworkPolicy to check
         port: The port number to match
-        selector: Pod selector labels to match (e.g., {"app": "pod-a"})
+        peer_selector: Pod selector labels to match (e.g., {"app": "pod-a"})
         protocol: The protocol to match (default: "TCP")
 
     Returns:
@@ -80,7 +81,7 @@ def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, sel
         for peer in ingress_rule._from:
             if peer.pod_selector and peer.pod_selector.match_labels:
                 # Check if all selector labels match
-                if peer.pod_selector.match_labels == selector:
+                if peer.pod_selector.match_labels == peer_selector:
                     peer_matches = True
                     break
 

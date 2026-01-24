@@ -98,3 +98,33 @@ def find_exposed_port(
 
     return None
 
+def get_pod_ips(pod: client.V1Pod) -> list[str]:
+    """
+    Get all IP addresses assigned to a pod.
+
+    Args:
+        pod: The Kubernetes Pod object (V1Pod)
+
+    Returns:
+        A list of IP addresses (as strings) assigned to the pod
+
+    Example:
+        pod = get_pod(name="backend", namespace="backend")
+        if pod:
+            ips = get_pod_ips(pod)
+            print(f"Pod IPs: {ips}")
+    """
+    ips = []
+
+    # Primary Pod IP
+    if pod.status.pod_ip:
+        ips.append(pod.status.pod_ip)
+
+    # Additional Pod IPs (for dual-stack or multiple IPs)
+    if pod.status.pod_i_ps:
+        for pod_ip in pod.status.pod_i_ps:
+            if pod_ip.ip not in ips:
+                ips.append(pod_ip.ip)
+
+    return ips
+

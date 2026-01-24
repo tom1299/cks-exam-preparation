@@ -32,7 +32,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is True
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a"}, protocol="TCP") is True
 
     def test_contains_ingress_rule_wrong_port(self):
 
@@ -46,7 +46,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3307, selector={"app": "pod-a"}, protocol="TCP") is False
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3307, peer_selector={"app": "pod-a"}, protocol="TCP") is False
 
     def test_contains_ingress_rule_wrong_selector(self):
 
@@ -60,7 +60,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "xxx"}, protocol="TCP") is False
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "xxx"}, protocol="TCP") is False
 
     def test_contains_ingress_rule_wrong_protocol(self):
 
@@ -74,7 +74,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="UDP") is False
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a"}, protocol="UDP") is False
 
     def test_contains_ingress_rule_no_port_in_nwp(self):
 
@@ -90,7 +90,7 @@ class TestNetworkPolicy:
 
         ingress_nwp.spec.ingress[0].ports = []
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3307, selector={"app": "pod-a"}, protocol="TCP") is True
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3307, peer_selector={"app": "pod-a"}, protocol="TCP") is True
 
     def test_contains_ingress_rule_match_multiple_peer_labels(self):
 
@@ -104,7 +104,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a", "tier": "frontend"}, protocol="TCP") is True
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a", "tier": "frontend"}, protocol="TCP") is True
 
     def test_contains_ingress_rule_match_multiple_peer_labels_different_order(self):
 
@@ -118,7 +118,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a", "tier": "frontend"}, protocol="TCP") is True
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a", "tier": "frontend"}, protocol="TCP") is True
 
     def test_contains_ingress_rule_match_multiple_peer_labels_not_matching(self):
 
@@ -132,7 +132,7 @@ class TestNetworkPolicy:
             ingress=True
         )
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is False
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a"}, protocol="TCP") is False
 
     def test_contains_ingress_rule_match_multiple_ports(self):
 
@@ -154,7 +154,7 @@ class TestNetworkPolicy:
         existing_port = ingress_nwp.spec.ingress[0].ports[0]
         ingress_nwp.spec.ingress[0].ports = [another_port, existing_port]
 
-        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, selector={"app": "pod-a"}, protocol="TCP") is True
+        assert networkpolicy.contains_ingress_rule(ingress_nwp, port=3306, peer_selector={"app": "pod-a"}, protocol="TCP") is True
 
     def test_contains_egress_rule_match(self):
         """Test that egress rule matches with correct port, selector, and protocol"""

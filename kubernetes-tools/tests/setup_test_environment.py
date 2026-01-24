@@ -248,7 +248,7 @@ nginx -g 'daemon off;'"""
                 "image": "python:3.9-slim",
                 "ports": [{"containerPort": 8080}],
                 "env": [
-                    {"name": "DB_HOST", "value": "mysql.db.svc.cluster.local"},
+                    {"name": "DB_HOST", "value": "mysql.test-app.svc.cluster.local"},
                     {"name": "DB_PORT", "value": "3306"},
                     {"name": "DB_USER", "value": "root"},
                     {"name": "DB_PASSWORD", "value": "password"},
@@ -300,7 +300,7 @@ python app.py"""
         "metadata": {
             "name": "mysql",
             "namespace": namespace,
-            "labels": {"app": "db"}
+            "labels": {"app": "mysql"}
         },
         "spec": {
             "containers": [
@@ -393,7 +393,7 @@ python app.py"""
             "namespace": namespace
         },
         "spec": {
-            "selector": {"app": "db"},
+            "selector": {"app": "mysql"},
             "ports": [{"port": 3306, "targetPort": 3306}]
         }
     }
@@ -407,6 +407,85 @@ python app.py"""
     print("  - Services: frontend, backend, mysql")
 
 
+def create_allow_dns_network_policy(namespace: str) -> client.V1NetworkPolicy:
+    """
+    Create a network policy that allows DNS egress for all pods in the namespace.
+
+    This network policy will:
+    - Select all pods in the namespace (empty podSelector)
+    - Allow egress to kube-system namespace on port 53 (DNS) for both TCP and UDP
+
+    Args:
+        namespace: Namespace where the network policy should be created
+
+    Returns:
+        The created V1NetworkPolicy object
+    """
+    load_kube_config()
+    networking_v1 = client.NetworkingV1Api()
+
+    # Create egress rule for DNS (UDP and TCP on port 53)
+    dns_ports = [
+        client.V1NetworkPolicyPort(protocol="UDP", port=53),
+        client.V1NetworkPolicyPort(protocol="TCP", port=53)
+    ]
+
+    # Allow DNS to kube-system namespace (where kube-dns/CoreDNS runs)
+    dns_peer = client.V1NetworkPolicyPeer(
+        namespace_selector=client.V1LabelSelector(
+            match_labels={"kubernetes.io/metadata.name": "kube-system"}
+        )
+    )
+
+    dns_egress_rule = client.V1NetworkPolicyEgressRule(
+        ports=dns_ports,
+        to=[dns_peer]
+    )
+
+    network_policy = client.V1NetworkPolicy(
+        metadata=client.V1ObjectMeta(
+            name="allow-dns",
+            namespace=namespace
+        ),
+        spec=client.V1NetworkPolicySpec(
+            pod_selector=client.V1LabelSelector(
+                match_labels={}  # Empty selector matches all pods
+            ),
+            policy_types=["Egress"],
+            egress=[dns_egress_rule]
+        )
+    )
+
+    try:
+        # Check if policy already exists and delete it
+        try:
+            networking_v1.read_namespaced_network_policy(name="allow-dns", namespace=namespace)
+            print(f"Network policy 'allow-dns' already exists in namespace '{namespace}', deleting...")
+            networking_v1.delete_namespaced_network_policy(
+                name="allow-dns",
+                namespace=namespace,
+                body=client.V1DeleteOptions()
+            )
+            print(f"Network policy 'allow-dns' deleted")
+            # Wait a moment for deletion to complete
+            import time
+            time.sleep(1)
+        except ApiException as e:
+            if e.status != 404:
+                raise
+
+        # Create the network policy
+        np = networking_v1.create_namespaced_network_policy(
+            namespace=namespace,
+            body=network_policy
+        )
+        print(f"Allow-DNS network policy created in namespace '{namespace}'")
+        return np
+    except ApiException as e:
+        print(f"Error creating allow-dns network policy: {e}")
+        raise
+
+
 def create_deny_all_network_policy(namespace: str) -> client.V1NetworkPolicy:
     """
     Create a deny-all network policy in the specified namespace.
@@ -415,6 +494,8 @@ def create_deny_all_network_policy(namespace: str) -> client.V1NetworkPolicy:
     - Select all pods in the namespace (empty podSelector)
     - Deny all ingress traffic (empty ingress list)
     - Deny all egress traffic (empty egress list)
+
+    Note: This should be created AFTER the allow-dns policy to ensure DNS still works.
 
     Args:
         namespace: Namespace where the network policy should be created
@@ -483,13 +564,23 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "cleanup":
         print("Cleaning up test environment...")
         cleanup_test_environment()
+    elif len(sys.argv) > 1 and sys.argv[1] == "allow-dns":
+        print("Creating allow-dns network policy...")
+        create_allow_dns_network_policy("test-app")
     elif len(sys.argv) > 1 and sys.argv[1] == "deny-all":
-        print("Creating deny-all network policy...")
+        print("Creating network policies...")
+        print("\nStep 1: Creating allow-dns policy (must be created first)...")
+        create_allow_dns_network_policy("test-app")
+        print("\nStep 2: Creating deny-all policy...")
         create_deny_all_network_policy("test-app")
+        print("\nNetwork policies created successfully!")
+        print("Note: DNS egress is still allowed for all pods")
     else:
         print("Setting up test environment...")
         create_test_app_environment(cleanup=True)
-        print("\nTo create a deny-all network policy, run:")
+        print("\nTo create network policies (allow-dns + deny-all), run:")
         print("  python setup_test_environment.py deny-all")
+        print("\nTo create only allow-dns network policy, run:")
+        print("  python setup_test_environment.py allow-dns")
         print("\nTo cleanup, run:")
         print("  python setup_test_environment.py cleanup")
