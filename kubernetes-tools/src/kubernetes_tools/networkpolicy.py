@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Union, Literal
+from typing import List
 
-from kubernetes import client, config
+from kubernetes import client
 
 def get_network_policies_matching_pod(
     pod: client.V1Pod
@@ -16,10 +16,6 @@ def get_network_policies_matching_pod(
     Returns:
         List of NetworkPolicy names that select this pod
     """
-    try:
-        config.load_kube_config()
-    except config.ConfigException:
-        config.load_incluster_config()
 
     networking_v1 = client.NetworkingV1Api()
 

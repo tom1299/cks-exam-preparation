@@ -3,7 +3,7 @@ from tests.test_utils import create_nwp
 
 from kubernetes_tools import networkpolicy, pods
 
-# TODO: Test cases not really check something. Add test scenario with known policies.
+# TODO: Refactor repetitive code into helper functions
 class TestNetworkPolicy:
 
     def test_get_network_policies_matching_pod(self):

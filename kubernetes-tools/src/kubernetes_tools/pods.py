@@ -1,4 +1,4 @@
-from kubernetes import client, config
+from kubernetes import client
 from typing import Optional
 
 from kubernetes.client import V1ContainerPort
@@ -34,11 +34,6 @@ def get_pod(
         else:
             print("Pod not found")
     """
-    try:
-        config.load_kube_config()
-    except config.ConfigException:
-        config.load_incluster_config()
-
     v1 = client.CoreV1Api()
 
     try:

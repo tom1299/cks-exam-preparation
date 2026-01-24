@@ -1,6 +1,6 @@
 from kubernetes_tools import pods
 
-
+# TODO: Remove superfluous comments for obvious assertions
 class TestPods:
 
     def test_get_pod_found(self):
