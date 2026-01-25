@@ -2,6 +2,7 @@ from kubernetes import client
 from typing import Optional
 
 from kubernetes.client import V1ContainerPort
+from langchain_core.tools import tool
 from pydantic import BaseModel, ConfigDict
 
 class ExposedContainerPort(BaseModel):
@@ -12,6 +13,7 @@ class ExposedContainerPort(BaseModel):
 
     container_name: str
     port: V1ContainerPort
+
 
 def get_pod(
     name: str,
@@ -43,6 +45,10 @@ def get_pod(
         if e.status == 404:
             return None
         raise
+
+
+# Tool wrapper for LangChain agents
+get_pod_tool = tool(parse_docstring=True)(get_pod)
 
 
 def find_exposed_port(
@@ -93,6 +99,11 @@ def find_exposed_port(
 
     return None
 
+
+# Tool wrapper for LangChain agents
+find_exposed_port_tool = tool(parse_docstring=True)(find_exposed_port)
+
+
 def get_pod_ips(pod: client.V1Pod) -> list[str]:
     """
     Get all IP addresses assigned to a pod.
@@ -122,4 +133,9 @@ def get_pod_ips(pod: client.V1Pod) -> list[str]:
                 ips.append(pod_ip.ip)
 
     return ips
+
+
+# Tool wrapper for LangChain agents
+get_pod_ips_tool = tool(parse_docstring=True)(get_pod_ips)
+
 

@@ -1,6 +1,8 @@
 import time
 from typing import Tuple, List
 from kubernetes import client
+from langchain_core.tools import tool
+
 
 def run_debug_command(
     namespace: str,
@@ -95,3 +97,56 @@ def run_debug_command(
     exit_code = container_status.state.terminated.exit_code
 
     return logs, exit_code == 0
+
+# Tool wrapper for LangChain agents
+run_debug_command_tool = tool(parse_docstring=True)(run_debug_command)
+
+
+def create_netcat_command_fot_connectivity_test(
+    target_ip: str,
+    target_port: int,
+    protocol: str = "TCP",
+    timeout: int = 5
+) -> List[str]:
+    """
+    Create a netcat command for testing connectivity to a target IP and port.
+
+    Args:
+        target_ip: The IP address to connect to
+        target_port: The port number to connect to
+        protocol: The protocol to use (default: "TCP"). Only "TCP" and "UDP" are supported
+        timeout: Connection timeout in seconds (default: 5)
+
+    Returns:
+        A list of command arguments for netcat
+
+    Example:
+        command = create_netcat_command_fot_connectivity_test(
+            target_ip="10.2.3.123",
+            target_port=3306,
+            protocol="TCP",
+            timeout=1
+        )
+        # Returns: ["nc", "-vz", "-w", "1", "10.2.3.123", "3306"]
+    """
+    protocol = protocol.upper()
+
+    # Base command with verbose (-v) and scan mode (-z)
+    command = ["nc", "-vz"]
+
+    # Add timeout
+    command.extend(["-w", str(timeout)])
+
+    # Add UDP flag if protocol is UDP
+    if protocol == "UDP":
+        command.append("-u")
+
+    # Add target IP and port
+    command.append(target_ip)
+    command.append(str(target_port))
+
+    return command
+
+
+# Tool wrapper for LangChain agents
+create_netcat_command_fot_connectivity_test_tool = tool(parse_docstring=True)(create_netcat_command_fot_connectivity_test)

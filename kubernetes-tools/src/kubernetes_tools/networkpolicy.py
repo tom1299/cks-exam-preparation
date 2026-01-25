@@ -3,18 +3,20 @@ from __future__ import annotations
 from typing import List
 
 from kubernetes import client
+from langchain.tools import tool
+
 
 def get_network_policies_matching_pod(
     pod: client.V1Pod
 ) -> List[client.V1NetworkPolicy]:
     """
-    Get the names of all NetworkPolicies whose selector matches the given pod.
+    Get the all NetworkPolicies whose selector matches the given pod.
 
     Args:
         pod: Kubernetes Pod object (V1Pod)
 
     Returns:
-        List of NetworkPolicy names that select this pod
+        List of NetworkPolicies
     """
 
     networking_v1 = client.NetworkingV1Api()
@@ -47,9 +49,14 @@ def get_network_policies_matching_pod(
 
     return matching_policies
 
+
+# Tool wrapper for LangChain agents
+get_network_policies_matching_pod_tool = tool(parse_docstring=True)(get_network_policies_matching_pod)
+
+
+# TODO: Examine whether is it possible to refactor a generic method for both ingress and egress rules functions.
 def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, peer_selector: dict, protocol: str = "TCP") -> bool:
     """
-    TODO: Examine whether is it possible to refactor a generic method for both ingress and egress rules functions.
     Check if a network policy contains an ingress rule matching the specified port, peer selector, and protocol.
 
     Args:
@@ -97,6 +104,10 @@ def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, pee
                 return True
 
     return False
+
+
+# Tool wrapper for LangChain agents
+contains_ingress_rule_tool = tool(parse_docstring=True)(contains_ingress_rule)
 
 
 def contains_egress_rule(network_policy: client.V1NetworkPolicy, port: int, selector: dict, protocol: str = "TCP") -> bool:
@@ -148,4 +159,9 @@ def contains_egress_rule(network_policy: client.V1NetworkPolicy, port: int, sele
                 return True
 
     return False
+
+
+# Tool wrapper for LangChain agents
+contains_egress_rule_tool = tool(parse_docstring=True)(contains_egress_rule)
+
 
