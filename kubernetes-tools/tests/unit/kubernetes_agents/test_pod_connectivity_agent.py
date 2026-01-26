@@ -1,3 +1,5 @@
+import uuid
+
 from kubernetes_agents.pod_connectivity_agent import agent
 
 class TestPodConnectivityAgent:
@@ -7,7 +9,7 @@ class TestPodConnectivityAgent:
         pass
 
     def test_check_pod_connectivity_not_working(self):
-        config = {"configurable": {"thread_id": "1"}}
+        config = {"configurable": {"thread_id": f"test-{uuid.uuid4()}"}}
 
         # Use local simple llm (which supports function calling)
         # Compare with Agent that has full access to kubectl as a tool.

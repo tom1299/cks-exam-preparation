@@ -8,7 +8,7 @@ class TestNetworkPolicy:
 
     def test_get_network_policies_matching_pod(self):
         """Test getting network policies that match a pod"""
-        pod = pods.get_pod(
+        pod = pods.get_pod_by_name(
             name="backend",
             namespace="test-app"
         )

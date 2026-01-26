@@ -15,7 +15,7 @@ class ExposedContainerPort(BaseModel):
     port: V1ContainerPort
 
 
-def get_pod(
+def get_pod_by_name(
     name: str,
     namespace: str = "default"
 ) -> Optional[client.V1Pod]:
@@ -48,7 +48,56 @@ def get_pod(
 
 
 # Tool wrapper for LangChain agents
-get_pod_tool = tool(parse_docstring=True)(get_pod)
+get_pod_by_name_tool = tool(parse_docstring=True)(get_pod_by_name)
+
+
+def get_pods_by_labels(
+    labels: dict,
+    namespace: str = "default"
+) -> client.V1PodList:
+    """
+    Get a pod by labels from a specific namespace.
+
+    Args:
+        labels: The labels of the pod to retrieve
+        namespace: The Kubernetes namespace where the pod is located (default: "default")
+
+    Returns:
+        V1PodList containing the pods matching the labels or an empty list if none found
+    """
+    v1 = client.CoreV1Api()
+    label_selector = ",".join([f"{key}={value}" for key, value in labels.items()])
+
+    return v1.list_namespaced_pod(
+        namespace=namespace,
+        label_selector=label_selector)
+
+def get_pods_by_labels_as_dict(
+    labels: dict,
+    namespace: str = "default"
+) -> list[dict]:
+    """
+    Get pods by labels from a specific namespace.
+
+    Args:
+        labels: The labels of the pods to retrieve
+        namespace: The Kubernetes namespace where the pods are located (default: "default")
+
+    Returns:
+        A list of dictionaries representing the pods matching the labels or an empty list if none found
+
+    Example:
+        pods = get_pods_by_labels_tool(labels={"app": "backend"}, namespace="default)
+        for pod in pods:
+            print(f"Found pod: {pod['metadata']['name']}")
+    """
+
+    pod_list = get_pods_by_labels(labels, namespace)
+    return [pod.to_dict() for pod in pod_list.items]
+
+
+# Tool wrapper for LangChain agents
+get_pods_by_labels_as_dict_tool = tool(parse_docstring=True)(get_pods_by_labels_as_dict)
 
 
 def find_exposed_port(

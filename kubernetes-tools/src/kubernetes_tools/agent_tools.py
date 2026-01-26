@@ -39,7 +39,7 @@ def get_pod_by_name(
         else:
             print("Pod not found")
     """
-    pod = pods.get_pod(name=name, namespace=namespace)
+    pod = pods.get_pod_by_name(name=name, namespace=namespace)
     if pod is None:
         return None
     
@@ -70,7 +70,7 @@ def get_pod_ip_addresses(
         if ips:
             print(f"Pod IPs: {ips}")
     """
-    pod = pods.get_pod(name=pod_name, namespace=namespace)
+    pod = pods.get_pod_by_name(name=pod_name, namespace=namespace)
     if pod is None:
         return None
     
@@ -101,7 +101,7 @@ def check_pod_exposes_port(
         if result['exposed']:
             print(f"Container '{result['container_name']}' exposes port {result['port']}")
     """
-    pod = pods.get_pod(name=pod_name, namespace=namespace)
+    pod = pods.get_pod_by_name(name=pod_name, namespace=namespace)
     if pod is None:
         return {"exposed": False, "error": "Pod not found"}
     
@@ -137,7 +137,7 @@ def get_network_policies_for_pod(
         policies = get_network_policies_for_pod(pod_name="backend", namespace="test-app")
         print(f"Matching policies: {policies}")
     """
-    pod = pods.get_pod(name=pod_name, namespace=namespace)
+    pod = pods.get_pod_by_name(name=pod_name, namespace=namespace)
     if pod is None:
         return []
     
