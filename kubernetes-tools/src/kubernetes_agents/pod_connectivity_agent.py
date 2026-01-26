@@ -64,24 +64,3 @@ agent = create_agent(
     tools=tools,
     checkpointer=checkpointer
 )
-
-config = {"configurable": {"thread_id": "1"}}
-
-# TODO: Create unit tests.
-# Use local simple llm (which supports function calling)
-# Compare with Agent that has full access to kubectl as a tool.
-if __name__ == "__main__":
-    response = agent.invoke(
-        {"messages": [{"role": "user", "content": "Why does the connection between pod "
-                                                  "labeled 'app: backend' and 'app: mysql' on "
-                                                  "port 3306 using protocol TCP not work in namespace test-app?"}]},
-        config=config
-    )
-
-    print("\n" + "="*80)
-    print("AGENT RESPONSE:")
-    print("="*80)
-    for message in response["messages"]:
-        if hasattr(message, 'content') and message.content:
-            print(f"\n{message.type.upper()}: {message.content}")
-    print("="*80)
