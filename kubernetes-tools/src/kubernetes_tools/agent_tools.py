@@ -331,3 +331,79 @@ def test_pod_connectivity(
         success=success,
         command=" ".join(command)
     )
+
+@tool(parse_docstring=True)
+def contains_ingress_rule(network_policy_name: str, namespace: str, port: int, peer_selector: dict, protocol: str = "TCP") -> bool:
+    """
+    Check if a network policy contains an ingress rule matching the specified port, the selector of the peer pod, and protocol.
+
+    Args:
+        network_policy_name: The name of the V1NetworkPolicy to check
+        namespace: The namespace where the NetworkPolicy is located
+        port: The port number of the egress traffic
+        peer_selector: Pod selector labels to match (e.g., {"app": "pod-a"}) for the target of the ingress rule
+        protocol: The protocol to match (default: "TCP")
+
+    Returns:
+        True if the network policy contains a matching ingress rule, False otherwise
+
+    Example:
+        allowed = contains_ingress_rule(
+            network_policy_name="allow-mysql-from-backend-ingress",
+            namespace="test-app",
+            port=3306,
+            peer_selector={"app": "backend"},
+            protocol="TCP"
+        )
+    """
+    networking_v1 = client.NetworkingV1Api()
+
+    network_policy = networking_v1.read_namespaced_network_policy(
+        name=network_policy_name,
+        namespace=namespace
+    )
+
+    return networkpolicy.contains_ingress_rule(
+        network_policy=network_policy,
+        port=port,
+        peer_selector=peer_selector,
+        protocol=protocol
+    )
+
+@tool(parse_docstring=True)
+def contains_egress_rule(network_policy_name: str, namespace: str, port: int, peer_selector: dict, protocol: str = "TCP") -> bool:
+    """
+    Check if a network policy contains an egress rule matching the specified port, the selector of the peer pod, and protocol.
+
+    Args:
+        network_policy_name: The name of the V1NetworkPolicy to check
+        namespace: The namespace where the NetworkPolicy is located
+        port: The port number of the egress traffic
+        peer_selector: Pod selector labels to match (e.g., {"app": "pod-a"}) for the target of the egress rule
+        protocol: The protocol to match (default: "TCP")
+
+    Returns:
+        True if the network policy contains a matching egress rule, False otherwise
+
+    Example:
+        allowed = contains_egress_rule(
+            network_policy_name="allow-backend-to-mysql-egress",
+            namespace="test-app",
+            port=3306,
+            peer_selector={"app": "mysql"},
+            protocol="TCP"
+        )
+    """
+    networking_v1 = client.NetworkingV1Api()
+
+    network_policy = networking_v1.read_namespaced_network_policy(
+        name=network_policy_name,
+        namespace=namespace
+    )
+
+    return networkpolicy.contains_egress_rule(
+        network_policy=network_policy,
+        port=port,
+        selector=peer_selector,
+        protocol=protocol
+    )

@@ -1,13 +1,12 @@
 import uuid
 
+from pytest import mark
+
 from kubernetes_agents.pod_connectivity_agent import agent
 
 class TestPodConnectivityAgent:
 
-    def test_check_pod_connectivity_working(self):
-        # Test the method that checks pod connectivity
-        pass
-
+    @mark.skip(reason="Disabled until we have a test setup that can validate connectivity")
     def test_check_pod_connectivity_not_working(self):
         config = {"configurable": {"thread_id": f"test-{uuid.uuid4()}"}}
 

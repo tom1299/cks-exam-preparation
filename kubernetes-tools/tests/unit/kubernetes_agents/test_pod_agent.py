@@ -1,26 +1,9 @@
 import uuid
 
-from pytest import fixture, mark, param
+from pytest import mark, param
 
 from langchain_core.messages import AIMessage
-from langchain.chat_models import init_chat_model
 from kubernetes_agents.pod_agent import agent, create_pod_agent
-
-@fixture(scope="module")
-def openai_model():
-    return init_chat_model(
-        "gpt-5-nano",
-        temperature=0,
-        timeout=60,
-        max_tokens=4000)
-
-@fixture(scope="module")
-def anthropic_model():
-    return init_chat_model(
-        "claude-sonnet-4-5-20250929",
-        temperature=0,
-        timeout=60,
-        max_tokens=4000),
 
 class TestPodAgent:
 

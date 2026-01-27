@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import List
 
 from kubernetes import client
-from langchain.tools import tool
-
 
 def get_network_policies_matching_pod(
     pod: client.V1Pod
@@ -48,11 +46,6 @@ def get_network_policies_matching_pod(
             matching_policies.append(network_policy)
 
     return matching_policies
-
-
-# Tool wrapper for LangChain agents
-get_network_policies_matching_pod_tool = tool(parse_docstring=True)(get_network_policies_matching_pod)
-
 
 # TODO: Examine whether is it possible to refactor a generic method for both ingress and egress rules functions.
 def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, peer_selector: dict, protocol: str = "TCP") -> bool:
@@ -105,11 +98,6 @@ def contains_ingress_rule(network_policy: client.V1NetworkPolicy, port: int, pee
 
     return False
 
-
-# Tool wrapper for LangChain agents
-contains_ingress_rule_tool = tool(parse_docstring=True)(contains_ingress_rule)
-
-
 def contains_egress_rule(network_policy: client.V1NetworkPolicy, port: int, selector: dict, protocol: str = "TCP") -> bool:
     """
     Check if a network policy contains an egress rule matching the specified port, selector, and protocol.
@@ -159,9 +147,3 @@ def contains_egress_rule(network_policy: client.V1NetworkPolicy, port: int, sele
                 return True
 
     return False
-
-
-# Tool wrapper for LangChain agents
-contains_egress_rule_tool = tool(parse_docstring=True)(contains_egress_rule)
-
-

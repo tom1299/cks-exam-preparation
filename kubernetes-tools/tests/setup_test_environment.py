@@ -161,30 +161,33 @@ def create_service(service_spec: dict, namespace: str) -> client.V1Service:
         raise
 
 
-def create_test_app_environment(cleanup: bool = True) -> None:
+def create_test_app_environment(cleanup: bool = True, namespace: str = "test-app",
+                                install_network_policies: bool = False) -> None:
     """
     Create the complete test-app environment from test-app.yaml.
 
     This function creates:
-    - test-app namespace
+    - namespace (test-app or test-app2)
     - frontend pod (nginx)
     - backend pod (python flask app)
     - mysql pod with query-logger sidecar
     - mysql-config ConfigMap
     - Services for frontend, backend, and mysql
+    - Optionally: allow-dns and deny-all network policies
 
     Args:
         cleanup: If True, delete existing namespace before creating resources
+        namespace: Name of the namespace to create (default: "test-app")
+        install_network_policies: If True, install allow-dns and deny-all network policies
     """
     load_kube_config()
-    namespace = "test-app"
 
     # Step 1: Cleanup if requested
     if cleanup:
         delete_namespace_if_exists(namespace)
 
     # Step 2: Create namespace
-    create_namespace(namespace, labels={"name": "test-app"})
+    create_namespace(namespace, labels={"name": namespace})
 
     # Step 3: Create ConfigMap for MySQL
     mysql_config_data = {
@@ -399,12 +402,23 @@ python app.py"""
     }
     create_service(mysql_service, namespace)
 
+    # Step 6: Install network policies if requested
+    if install_network_policies:
+        print(f"\nInstalling network policies in namespace '{namespace}'...")
+        print("  Creating allow-dns policy (must be created first)...")
+        create_allow_dns_network_policy(namespace)
+        print("  Creating deny-all policy...")
+        create_deny_all_network_policy(namespace)
+        print("  Network policies installed successfully")
+
     print(f"\nTest environment created successfully in namespace '{namespace}'")
     print("Resources created:")
-    print("  - Namespace: test-app")
+    print(f"  - Namespace: {namespace}")
     print("  - ConfigMap: mysql-config")
     print("  - Pods: frontend, backend, mysql")
     print("  - Services: frontend, backend, mysql")
+    if install_network_policies:
+        print("  - Network Policies: allow-dns, deny-all")
 
 
 def create_allow_dns_network_policy(namespace: str) -> client.V1NetworkPolicy:
@@ -562,25 +576,44 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) > 1 and sys.argv[1] == "cleanup":
-        print("Cleaning up test environment...")
-        cleanup_test_environment()
+        print("Cleaning up test environments...")
+        cleanup_test_environment("test-app")
+        cleanup_test_environment("test-app2")
     elif len(sys.argv) > 1 and sys.argv[1] == "allow-dns":
-        print("Creating allow-dns network policy...")
+        print("Creating allow-dns network policy in test-app...")
         create_allow_dns_network_policy("test-app")
     elif len(sys.argv) > 1 and sys.argv[1] == "deny-all":
-        print("Creating network policies...")
+        print("Creating network policies in test-app...")
         print("\nStep 1: Creating allow-dns policy (must be created first)...")
         create_allow_dns_network_policy("test-app")
         print("\nStep 2: Creating deny-all policy...")
         create_deny_all_network_policy("test-app")
-        print("\nNetwork policies created successfully!")
+        print("\nNetwork policies created successfully in test-app!")
         print("Note: DNS egress is still allowed for all pods")
     else:
-        print("Setting up test environment...")
-        create_test_app_environment(cleanup=True)
-        print("\nTo create network policies (allow-dns + deny-all), run:")
+        print("Setting up test environments...")
+
+        print("\n" + "="*80)
+        print("Creating test-app namespace (without network policies)...")
+        print("="*80)
+        create_test_app_environment(cleanup=True, namespace="test-app", install_network_policies=False)
+
+        print("\n" + "="*80)
+        print("Creating test-app2 namespace (with network policies)...")
+        print("="*80)
+        create_test_app_environment(cleanup=True, namespace="test-app2", install_network_policies=True)
+
+        print("\n" + "="*80)
+        print("SETUP COMPLETE")
+        print("="*80)
+        print("\nCreated two test environments:")
+        print("  1. test-app  - No network policies (open access)")
+        print("  2. test-app2 - With deny-all + allow-dns network policies")
+        print("\nTo create network policies in test-app, run:")
         print("  python setup_test_environment.py deny-all")
-        print("\nTo create only allow-dns network policy, run:")
+        print("\nTo create only allow-dns network policy in test-app, run:")
         print("  python setup_test_environment.py allow-dns")
-        print("\nTo cleanup, run:")
+        print("\nTo cleanup both namespaces, run:")
         print("  python setup_test_environment.py cleanup")
+
+
