@@ -7,3 +7,4 @@ https://www.jetbrains.com/help/pycharm/configuring-project-structure.html#mark-d
 * Refactor connectivity agent tools analogous to pod agent
 * Create test case analogous to pod agent for connectivity agent
 * Examine why streaming in pod agent test does not work with anthropic model
+* Use langchain agent evals for testing agents: https://github.com/langchain-ai/agentevals
