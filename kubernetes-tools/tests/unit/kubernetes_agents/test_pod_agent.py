@@ -5,7 +5,7 @@ from kubernetes_agents.pod_agent import agent
 
 class TestPodAgent:
 
-    def test_get_pod_information_for_existing_pd(self):
+    def test_get_pod_information_for_existing_pod(self):
         config = {"configurable": {"thread_id": f"test-{uuid.uuid4()}"}}
 
         response = agent.invoke(
