@@ -4,6 +4,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from kubernetes_tools.agent_tools import (
     get_pod_by_name,
+    get_pods_by_labels,
     get_pod_ip_addresses,
     check_pod_exposes_port,
     get_network_policies_for_pod,
@@ -28,15 +29,13 @@ connectivity issues between pods within the same namespace. You have access to v
 * Test connectivity between pods using ephemeral debug containers with netcat
 
 When analyzing connectivity issues:
-1. First, identify the source and target pods
-2. Get their IP addresses and check if target exposes the required port
-3. Find all network policies that apply to both pods
-4. Check if there are egress rules allowing traffic from source to target
-5. Check if there are ingress rules allowing traffic into the target
-6. If policies look correct, test actual connectivity using the test_pod_connectivity tool
-
-Remember: In Kubernetes with NetworkPolicies, if a pod is selected by ANY policy,
-then traffic is denied by default unless explicitly allowed.
+1. First, get the source and target pods by their name / labels and namespace
+2. Check whether the target pod exposes the required port
+3. Get their IP addresses
+4. Find all network policies that apply to both pods
+5. Check if there are egress rules allowing traffic from source to target
+6. Check if there are ingress rules allowing traffic into the target
+7. If policies look correct, test actual connectivity using the test_pod_connectivity tool
 """
 
 model = init_chat_model(
@@ -50,6 +49,7 @@ checkpointer = InMemorySaver()
 
 tools = [
     get_pod_by_name,
+    get_pods_by_labels,
     get_pod_ip_addresses,
     check_pod_exposes_port,
     get_network_policies_for_pod,

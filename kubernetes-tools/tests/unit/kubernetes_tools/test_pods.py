@@ -193,12 +193,12 @@ class TestPods:
 
 
     def test_get_pod_by_labels_found(self):
-        pod_list = pods.get_pods_by_labels_as_dict({"app": "backend"}, namespace="test-app")
+        pod_list = pods.get_pods_by_labels({"app": "backend"}, namespace="test-app")
 
         assert pod_list is not None
-        assert len(pod_list) == 1
+        assert len(pod_list.items) == 1
 
-        for pod in pod_list:
-            assert pod["metadata"]["name"] == "backend"
-            assert pod["metadata"]["namespace"] == "test-app"
-            assert pod["spec"]["containers"][0]["name"] == "backend"
+        for pod in pod_list.items:
+            assert pod.metadata.name is not None
+            assert pod.metadata.namespace == "test-app"
+            assert pod.spec.containers[0].name == "backend"

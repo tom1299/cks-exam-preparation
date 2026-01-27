@@ -2,7 +2,6 @@ from kubernetes import client
 from typing import Optional
 
 from kubernetes.client import V1ContainerPort
-from langchain_core.tools import tool
 from pydantic import BaseModel, ConfigDict
 
 class ExposedContainerPort(BaseModel):
@@ -46,11 +45,6 @@ def get_pod_by_name(
             return None
         raise
 
-
-# Tool wrapper for LangChain agents
-get_pod_by_name_tool = tool(parse_docstring=True)(get_pod_by_name)
-
-
 def get_pods_by_labels(
     labels: dict,
     namespace: str = "default"
@@ -71,34 +65,6 @@ def get_pods_by_labels(
     return v1.list_namespaced_pod(
         namespace=namespace,
         label_selector=label_selector)
-
-def get_pods_by_labels_as_dict(
-    labels: dict,
-    namespace: str = "default"
-) -> list[dict]:
-    """
-    Get pods by labels from a specific namespace.
-
-    Args:
-        labels: The labels of the pods to retrieve
-        namespace: The Kubernetes namespace where the pods are located (default: "default")
-
-    Returns:
-        A list of dictionaries representing the pods matching the labels or an empty list if none found
-
-    Example:
-        pods = get_pods_by_labels_tool(labels={"app": "backend"}, namespace="default)
-        for pod in pods:
-            print(f"Found pod: {pod['metadata']['name']}")
-    """
-
-    pod_list = get_pods_by_labels(labels, namespace)
-    return [pod.to_dict() for pod in pod_list.items]
-
-
-# Tool wrapper for LangChain agents
-get_pods_by_labels_as_dict_tool = tool(parse_docstring=True)(get_pods_by_labels_as_dict)
-
 
 def find_exposed_port(
     pod: client.V1Pod,
@@ -148,11 +114,6 @@ def find_exposed_port(
 
     return None
 
-
-# Tool wrapper for LangChain agents
-find_exposed_port_tool = tool(parse_docstring=True)(find_exposed_port)
-
-
 def get_pod_ips(pod: client.V1Pod) -> list[str]:
     """
     Get all IP addresses assigned to a pod.
@@ -182,9 +143,5 @@ def get_pod_ips(pod: client.V1Pod) -> list[str]:
                 ips.append(pod_ip.ip)
 
     return ips
-
-
-# Tool wrapper for LangChain agents
-get_pod_ips_tool = tool(parse_docstring=True)(get_pod_ips)
 
 

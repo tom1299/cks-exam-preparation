@@ -9,7 +9,7 @@ TODO: AI generated wrapper code => Review and derive better return values
 for example for the network policies which should not just return names
 but should also return the full content of the policies or at least their rules.
 """
-
+from pydantic import BaseModel
 from typing import Optional, List, Dict
 from langchain_core.tools import tool
 from kubernetes import client
@@ -17,37 +17,63 @@ from kubernetes import client
 from kubernetes_tools import pods, networkpolicy
 
 
+class ExposedContainerPort(BaseModel):
+    container_name: str
+    port: dict
+
+class PortConnectivityResult(BaseModel):
+    output: str
+    success: bool
+    command: str
+
 @tool(parse_docstring=True)
 def get_pod_by_name(
     name: str,
     namespace: str = "default"
-) -> Optional[str]:
+) -> Optional[dict]:
     """
-    Get a pod by name from a specific namespace and return its basic information.
+    Get a pod by name from a specific namespace and return its client.V1Pod
+    representation as a dict.
 
     Args:
         name: The name of the pod to retrieve
         namespace: The Kubernetes namespace where the pod is located (default: "default")
 
     Returns:
-        A string describing the pod if found, None if the pod doesn't exist
+        client.V1Pod as a dict
 
     Example:
         pod_info = get_pod_by_name(name="backend", namespace="test-app")
         if pod_info:
-            print(f"Found pod: {pod_info}")
-        else:
-            print("Pod not found")
+            print(f"Pod image: {pod_info['spec']['containers'][0]['image']}")
     """
     pod = pods.get_pod_by_name(name=name, namespace=namespace)
-    if pod is None:
-        return None
-    
-    # Return a simple string representation
-    labels = pod.metadata.labels or {}
-    label_str = ", ".join([f"{k}={v}" for k, v in labels.items()])
-    
-    return f"Pod '{pod.metadata.name}' in namespace '{pod.metadata.namespace}' with labels: {label_str}"
+    if pod:
+        return pod.to_dict()
+    return None
+
+def get_pods_by_labels(
+    labels: dict,
+    namespace: str = "default"
+) -> list[dict]:
+    """
+    Get pods by labels from a specific namespace.
+
+    Args:
+        labels: The labels of the pods to retrieve
+        namespace: The Kubernetes namespace where the pods are located (default: "default")
+
+    Returns:
+        A list of dictionaries representing the pods matching the labels or an empty list if none found
+
+    Example:
+        pods = get_pods_by_labels_tool(labels={"app": "backend"}, namespace="default")
+        for pod in pods:
+            print(f"Found pod: {pod['metadata']['name']}")
+    """
+
+    pod_list = pods.get_pods_by_labels(labels, namespace)
+    return [pod.to_dict() for pod in pod_list.items]
 
 
 @tool(parse_docstring=True)
@@ -83,7 +109,7 @@ def check_pod_exposes_port(
     namespace: str,
     port: int,
     protocol: str = "TCP"
-) -> Dict[str, any]:
+) -> Optional[ExposedContainerPort]:
     """
     Check if a pod exposes a specific port with the given protocol.
 
@@ -91,38 +117,41 @@ def check_pod_exposes_port(
         pod_name: The name of the pod to check
         namespace: The Kubernetes namespace where the pod is located
         port: The port number to search for
-        protocol: The protocol to match (default: "TCP"). Common values: "TCP", "UDP", "SCTP"
+        protocol: The protocol to match (default: "TCP"). Common values: "TCP", "UDP"
 
     Returns:
-        A dictionary with 'exposed' (bool), 'container_name' (str if exposed), 'port' (int if exposed)
+        An object of type ExposedContainerPort containing the container name and port details if found,
+        otherwise returns None
 
     Example:
-        result = check_pod_exposes_port(pod_name="mysql", namespace="test-app", port=3306)
-        if result['exposed']:
-            print(f"Container '{result['container_name']}' exposes port {result['port']}")
+        exposed_port = check_pod_exposes_port(
+            pod_name="backend",
+            namespace="test-app",
+            port=3306,
+            protocol="TCP"
+        )
+        if exposed_port:
+            print(f"Container '{exposed_port['container_name']}' exposes port {exposed_port['port']}")
     """
     pod = pods.get_pod_by_name(name=pod_name, namespace=namespace)
     if pod is None:
-        return {"exposed": False, "error": "Pod not found"}
+        return None
     
     exposed = pods.find_exposed_port(pod, port=port, protocol=protocol)
     
     if exposed:
-        return {
-            "exposed": True,
-            "container_name": exposed.container_name,
-            "port": exposed.port.container_port,
-            "protocol": exposed.port.protocol or "TCP"
-        }
-    else:
-        return {"exposed": False}
+        return ExposedContainerPort(
+            container_name=exposed.container_name,
+            port=exposed.port.to_dict()
+        )
+    return None
 
 
 @tool(parse_docstring=True)
 def get_network_policies_for_pod(
     pod_name: str,
     namespace: str
-) -> List[str]:
+) -> List[dict]:
     """
     Get all NetworkPolicies whose selector matches the given pod.
 
@@ -131,18 +160,19 @@ def get_network_policies_for_pod(
         namespace: The Kubernetes namespace where the pod is located
 
     Returns:
-        List of NetworkPolicy names that match the pod
+        List of NetworkPolicies as a dict that match the pod
 
     Example:
         policies = get_network_policies_for_pod(pod_name="backend", namespace="test-app")
-        print(f"Matching policies: {policies}")
+        for policy in policies:
+            print(f"Matching policy name: {policy['metadata']['name']}")
     """
     pod = pods.get_pod_by_name(name=pod_name, namespace=namespace)
     if pod is None:
         return []
     
     policies = networkpolicy.get_network_policies_matching_pod(pod)
-    return [policy.metadata.name for policy in policies]
+    return [policy.to_dict()for policy in policies]
 
 
 @tool(parse_docstring=True)
@@ -252,7 +282,7 @@ def test_pod_connectivity(
     protocol: str = "TCP",
     timeout: int = 5,
     image: str = "nicolaka/netshoot"
-) -> Dict[str, any]:
+) -> PortConnectivityResult:
     """
     Test connectivity from a source pod to a target IP and port using netcat in an ephemeral container.
 
@@ -266,7 +296,7 @@ def test_pod_connectivity(
         image: The container image to use for debugging (default: "nicolaka/netshoot")
 
     Returns:
-        A dictionary with 'output' (command output) and 'success' (bool)
+        An object of type PortConnectivityResult containing the output, success status, and command used
 
     Example:
         result = test_pod_connectivity(
@@ -296,8 +326,8 @@ def test_pod_connectivity(
         max_wait=timeout + 30  # Give extra time for container to start
     )
     
-    return {
-        "output": output,
-        "success": success,
-        "command": " ".join(command)
-    }
+    return PortConnectivityResult(
+        output=output,
+        success=success,
+        command=" ".join(command)
+    )

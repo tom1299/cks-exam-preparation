@@ -3,7 +3,7 @@ from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import InMemorySaver
 
 from kubernetes_tools.pods import (
-    get_pods_by_labels_as_dict
+    get_pods_by_labels
 )
 
 from dotenv import load_dotenv
@@ -27,7 +27,7 @@ model = init_chat_model(
 checkpointer = InMemorySaver()
 
 tools = [
-    get_pods_by_labels_as_dict
+    get_pods_by_labels
 ]
 
 agent = create_agent(
