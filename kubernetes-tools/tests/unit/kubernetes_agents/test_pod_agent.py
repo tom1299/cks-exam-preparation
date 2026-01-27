@@ -1,7 +1,26 @@
 import uuid
 
+from pytest import fixture, mark, param
+
 from langchain_core.messages import AIMessage
-from kubernetes_agents.pod_agent import agent
+from langchain.chat_models import init_chat_model
+from kubernetes_agents.pod_agent import agent, create_pod_agent
+
+@fixture(scope="module")
+def openai_model():
+    return init_chat_model(
+        "gpt-5-nano",
+        temperature=0,
+        timeout=60,
+        max_tokens=4000)
+
+@fixture(scope="module")
+def anthropic_model():
+    return init_chat_model(
+        "claude-sonnet-4-5-20250929",
+        temperature=0,
+        timeout=60,
+        max_tokens=4000),
 
 class TestPodAgent:
 
@@ -32,3 +51,25 @@ class TestPodAgent:
                 assert "python:3.9-slim" in message.content
 
         assert get_pods_tool_invoked, "Expected get_pods_by_labels tool to be invoked"
+
+    @mark.parametrize(
+        "model_name",
+        [
+            "openai_model",
+            param("anthropic_model", marks=mark.skip(reason="Disabled for claude sonnet because of streaming issues"))
+        ],
+    )
+    def test_get_pod_information_for_existing_pod_streaming(self, model_name, request):
+        config = {"configurable": {"thread_id": f"test-{uuid.uuid4()}"}}
+
+        pod_agent = create_pod_agent(request.getfixturevalue(model_name))
+
+        for chunk in pod_agent.stream(
+            {"messages": [{"role": "user", "content": "Give me all image names of containers in the pod "
+                                                      "labeled 'app: backend' in namespace test-app."
+                                                      "Do not include ephemeral containers."}]},
+            config=config,
+            # TODO: messages mode seems only to work for openai currently.
+            stream_mode="messages"
+        ):
+            print(chunk)

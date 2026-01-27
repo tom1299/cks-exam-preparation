@@ -60,7 +60,7 @@ def get_pods_by_labels(
     Get pods by labels from a specific namespace.
 
     Args:
-        labels: The labels of the pods to retrieve
+        labels: A dict, containing the labels of the pods to retrieve as key-value pairs (e.g., {"name": "db"})
         namespace: The Kubernetes namespace where the pods are located (default: "default")
 
     Returns:

@@ -17,22 +17,29 @@ based on label selector and namespace. You have access to the following tools:
 * Retrieve pod information by labels and namespace
 """
 
-model = init_chat_model(
-    "claude-sonnet-4-5-20250929",
-    temperature=0,
-    timeout=60,
-    max_tokens=4000
-)
-
 checkpointer = InMemorySaver()
 
 tools = [
     get_pods_by_labels
 ]
 
-agent = create_agent(
-    model=model,
-    system_prompt=SYSTEM_PROMPT,
-    tools=tools,
-    checkpointer=checkpointer
+def create_pod_agent(
+    agent_model,
+):
+    pod_agent = create_agent(
+        model=agent_model,
+        system_prompt=SYSTEM_PROMPT,
+        tools=tools,
+        checkpointer=checkpointer
+    )
+    return pod_agent
+
+
+
+agent = create_pod_agent(
+    agent_model=init_chat_model(
+        "gpt-5-nano",
+        temperature=0,
+        timeout=60,
+        max_tokens=4000),
 )
