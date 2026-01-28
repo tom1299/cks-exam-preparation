@@ -1,8 +1,6 @@
 import time
 from typing import Tuple, List
 from kubernetes import client
-from langchain_core.tools import tool
-
 
 def run_debug_command(
     namespace: str,
@@ -98,10 +96,6 @@ def run_debug_command(
 
     return logs, exit_code == 0
 
-# Tool wrapper for LangChain agents
-run_debug_command_tool = tool(parse_docstring=True)(run_debug_command)
-
-
 def create_netcat_command_fot_connectivity_test(
     target_ip: str,
     target_port: int,
@@ -146,7 +140,3 @@ def create_netcat_command_fot_connectivity_test(
     command.append(str(target_port))
 
     return command
-
-
-# Tool wrapper for LangChain agents
-create_netcat_command_fot_connectivity_test_tool = tool(parse_docstring=True)(create_netcat_command_fot_connectivity_test)

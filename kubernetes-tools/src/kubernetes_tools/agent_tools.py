@@ -14,8 +14,7 @@ from typing import Optional, List, Dict
 from langchain_core.tools import tool
 from kubernetes import client
 
-from kubernetes_tools import pods, networkpolicy
-
+from kubernetes_tools import pods, networkpolicy, debug
 
 class ExposedContainerPort(BaseModel):
     container_name: str
@@ -285,6 +284,8 @@ def test_pod_connectivity(
 ) -> PortConnectivityResult:
     """
     Test connectivity from a source pod to a target IP and port using netcat in an ephemeral container.
+    The function creates a netcat command and runs it in an ephemeral container within the source pod
+    trying to connect to the target IP and port.
 
     Args:
         source_pod_name: The name of the pod to run the test from
@@ -307,10 +308,9 @@ def test_pod_connectivity(
         )
         print(f"Success: {result['success']}, Output: {result['output']}")
     """
-    from kubernetes_tools.debug import create_netcat_command_fot_connectivity_test, run_debug_command
-    
+
     # Create the netcat command
-    command = create_netcat_command_fot_connectivity_test(
+    command = debug.create_netcat_command_fot_connectivity_test(
         target_ip=target_ip,
         target_port=target_port,
         protocol=protocol,
@@ -318,7 +318,7 @@ def test_pod_connectivity(
     )
     
     # Run the debug command
-    output, success = run_debug_command(
+    output, success = debug.run_debug_command(
         namespace=namespace,
         pod_name=source_pod_name,
         command=command,

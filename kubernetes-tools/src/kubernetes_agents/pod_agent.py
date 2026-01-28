@@ -20,7 +20,7 @@ based on label selector and namespace. You have access to the following tools:
 checkpointer = InMemorySaver()
 
 tools = [
-    get_pods_by_labels
+    get_pods_by_labels,
 ]
 
 def create_pod_agent(
