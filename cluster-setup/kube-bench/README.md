@@ -8,7 +8,13 @@
 - Give the task of running kube-bench and fixing an issue to gemini-cli
 
 ## Findings
+### kubectl logs with labels only returns last 10 lines
+**Description**:
 `kubectl logs kube-bench-master-7j8gg` returns the full logs while `kubectl logs -l job-name=kube-bench-master --all-containers=true` returns only the last 10 lines of the logs.
+**Solution**:
+Default behavior see https://github.com/kubernetes/kubectl/issues/917#issuecomment-678889306
 
-## Gemini CLI
-- Take a closer look at how to setup [mcp servers](https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md)
+### Kube-bench agent
+**Description**:
+Implement a kube-bench agent that can run kube-bench and fix the issues it finds:
+- Follow the concept of HolmesGPT of run books for individual prompts for fixing specific issues

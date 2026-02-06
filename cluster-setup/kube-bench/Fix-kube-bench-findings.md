@@ -36,7 +36,7 @@ Besides usual shell commands use the following commands:
 - Read the "Remediation" section of the kube-bench report
 - For issues related to API server, controller manager, scheduler, etc., you may need to add the necessary flags to the `kind-config.yaml` file under the `kind` section. Especially, by using "Kubeadm Config Patches".
 - For issues related to the nodes host, run commands for fixing issues using `docker exec`. Successful commands should be added to a script named `harden-master-node.sh` that can be run on the node after the cluster has been created. This script should be placed in the same directory as this file.
-- Look at the logs of the components on the node (e.g., kubelet, kube-proxy) to understand the issues better. You can use `docker exec <command>` to view the logs of a specific cmponent. For example:
+- Look at the logs of the components on the node (e.g., kubelet, kube-proxy) to understand the issues better. You can use `docker exec <command>` to view the logs of a specific component. For example:
   ```bash
   docker exec kind-control-plane journalctl -u kubelet
   ```
