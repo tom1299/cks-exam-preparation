@@ -11,3 +11,8 @@ supply-chain/image-policy-webhook/admission-control/ca.crt
 .idea/
 **/.idea/
 **/__pycache__
+
+jill.key
+jill.csr
+jill.crt
+
